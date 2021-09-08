@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 var jwt = require('jsonwebtoken');
-
+const bcrypt = require('bcryptjs')
 
 // Import models
 const userModel = require('../../models/user')
@@ -27,7 +27,7 @@ router.get('/register', async (req, res) => {
     const userData = {
         username: username,
         email: email,
-        password: password
+        password: bcrypt.hashSync(password, 10)
     }
     user = await userModel.create(userData)
 
@@ -52,15 +52,15 @@ router.get('/login', async (req, res) => {
 
     let user = await userModel.findOne({ username: username })
     if (!user)
-        return res.status(400).json({ success: false, message: 'یوزرنیم یا رمز عبور اشتباه است.', data: {} })
-
-    if (password != user.password)
-        return res.status(400).json({ success: false, message: 'یوزرنیم یا رمز عبور اشتباه است.', data: {} })
+        return res.status(401).json({ success: false, message: 'یوزرنیم یا رمز عبور اشتباه است.', data: {} })
+        const validPassword = bcrypt.compareSync(password, user.password);
+    if (!validPassword)
+        return res.status(401).json({ success: false, message: 'یوزرنیم یا رمز عبور اشتباه است.', data: {} })
 
 
     const token = jwt.sign({ id: user._id, date: Date.now() }, key);
-
-    res.json({ success: true, message: 'ورود با موفقیت انجام شد', data: { token } })
+    
+    res.status(200).json({ success: true, message: 'ورود با موفقیت انجام شد', data: { token } })
 
 })
 
